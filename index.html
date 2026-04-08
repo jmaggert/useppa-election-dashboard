@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UIP Advisory Council Election Results</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; background: #d9e2e8; color: #063146; min-height: 100vh; }
+        .header { background: #063146; color: white; padding: 24px 40px; display: flex; align-items: center; gap: 20px; }
+        .header-text h1 { font-size: 24px; font-weight: 600; letter-spacing: 0.5px; }
+        .header-text p { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+        .last-updated { margin-left: auto; font-size: 12px; opacity: 0.7; text-align: right; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 32px 40px; max-width: 1400px; margin: 0 auto; }
+        @media (max-width: 900px) { .dashboard { grid-template-columns: 1fr; } }
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(6, 49, 70, 0.1); overflow: hidden; }
+        .card-header { background: #063146; color: white; padding: 16px 24px; font-size: 16px; font-weight: 600; }
+        .card-header .subtitle { font-size: 12px; font-weight: 400; opacity: 0.8; margin-top: 4px; }
+        .card-body { padding: 24px; }
+        .candidate-row { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #eef2f5; }
+        .candidate-row:last-child { border-bottom: none; }
+        .candidate-rank { width: 28px; height: 28px; border-radius: 50%; background: #eef2f5; color: #063146; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin-right: 12px; flex-shrink: 0; }
+        .candidate-rank.top-3 { background: #bf994d; color: white; }
+        .candidate-info { flex: 1; min-width: 0; }
+        .candidate-name { font-size: 14px; font-weight: 600; color: #063146; }
+        .candidate-bar-container { margin-top: 6px; background: #eef2f5; border-radius: 4px; height: 20px; position: relative; overflow: hidden; }
+        .candidate-bar { height: 100%; border-radius: 4px; transition: width 0.8s ease; min-width: 2px; }
+        .bar-homeowner { background: linear-gradient(90deg, #063146, #0a5a7c); }
+        .bar-clubmember { background: linear-gradient(90deg, #bf994d, #d4b06a); }
+        .candidate-votes { font-size: 13px; font-weight: 700; color: #063146; margin-left: 12px; min-width: 60px; text-align: right; }
+        .total-votes { text-align: center; padding: 16px 24px; background: #f8fafb; border-top: 1px solid #eef2f5; font-size: 13px; color: #666; }
+        .total-votes strong { color: #063146; }
+        .summary-row { grid-column: 1 / -1; }
+        .summary-card { display: flex; gap: 24px; padding: 20px 24px; }
+        .stat-box { flex: 1; text-align: center; padding: 16px; background: #f8fafb; border-radius: 6px; }
+        .stat-box .stat-value { font-size: 32px; font-weight: 700; color: #063146; }
+        .stat-box .stat-label { font-size: 12px; color: #666; margin-top: 4px; }
+        .footer { text-align: center; padding: 20px; font-size: 11px; color: #999; }
+        .no-data { text-align: center; padding: 40px; color: #999; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-text">
+            <h1>UIP Advisory Council Election Results</h1>
+            <p>Useppa Island Club & Marina</p>
+        </div>
+        <div class="last-updated" id="lastUpdated">Loading...</div>
+    </div>
+    <div class="dashboard">
+        <div class="card summary-row">
+            <div class="card-header">Election Summary</div>
+            <div class="card-body summary-card">
+                <div class="stat-box"><div class="stat-value" id="totalHomeownerVoters">0</div><div class="stat-label">Homeowner Ballots Cast</div></div>
+                <div class="stat-box"><div class="stat-value" id="totalClubMemberVoters">0</div><div class="stat-label">Club Member Ballots Cast</div></div>
+                <div class="stat-box"><div class="stat-value" id="totalVoters">0</div><div class="stat-label">Total Ballots Cast</div></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">Homeowner / Property Owner Candidates
+                <div class="subtitle">Select up to 3 &#8212; Top 3 fill two 3-year seats and one 2-year seat</div>
+            </div>
+            <div class="card-body" id="homeownerResults"></div>
+            <div class="total-votes" id="homeownerTotal"></div>
+        </div>
+        <div class="card">
+            <div class="card-header">Club Member Candidates
+                <div class="subtitle">Select up to 3 &#8212; Top 3 fill one 3-year, one 2-year, and one 1-year seat</div>
+            </div>
+            <div class="card-body" id="clubMemberResults"></div>
+            <div class="total-votes" id="clubMemberTotal"></div>
+        </div>
+    </div>
+    <div class="footer">UIP Advisory Council Election &copy; 2026 Useppa Island Club & Marina. Results update automatically.</div>
+    <script>
+        const DATA_URL = 'election-data.json';
+
+        function renderResults(candidates, containerId, totalId, barClass) {
+            const container = document.getElementById(containerId);
+            const totalEl = document.getElementById(totalId);
+            const sorted = [...candidates].sort((a, b) => b.votes - a.votes);
+            const maxVotes = Math.max(...sorted.map(c => c.votes), 1);
+            const totalVotes = sorted.reduce((sum, c) => sum + c.votes, 0);
+            container.innerHTML = sorted.map((c, i) => `
+                <div class="candidate-row">
+                    <div class="candidate-rank ${i < 3 ? 'top-3' : ''}">${i + 1}</div>
+                    <div class="candidate-info">
+                        <div class="candidate-name">${c.name}</div>
+                        <div class="candidate-bar-container">
+                            <div class="candidate-bar ${barClass}" style="width: ${(c.votes / maxVotes) * 100}%"></div>
+                        </div>
+                    </div>
+                    <div class="candidate-votes">${c.votes} vote${c.votes !== 1 ? 's' : ''}</div>
+                </div>`).join('');
+            totalEl.innerHTML = `<strong>${totalVotes}</strong> total votes across ${sorted.length} candidates`;
+        }
+
+        async function loadData() {
+            let data;
+            try {
+                const response = await fetch(DATA_URL + '?t=' + Date.now());
+                if (!response.ok) throw new Error(response.status);
+                data = await response.json();
+            } catch (e) {
+                document.getElementById('homeownerResults').innerHTML = '<div class="no-data">Unable to load results.</div>';
+                document.getElementById('clubMemberResults').innerHTML = '<div class="no-data">Unable to load results.</div>';
+                return;
+            }
+            const homeowner = data.candidates.filter(c => c.category === 'PropertyOwner');
+            const clubMember = data.candidates.filter(c => c.category === 'ClubMember');
+            renderResults(homeowner, 'homeownerResults', 'homeownerTotal', 'bar-homeowner');
+            renderResults(clubMember, 'clubMemberResults', 'clubMemberTotal', 'bar-clubmember');
+            document.getElementById('totalHomeownerVoters').textContent = data.totalHomeownerVoters || 0;
+            document.getElementById('totalClubMemberVoters').textContent = data.totalClubMemberVoters || 0;
+            document.getElementById('totalVoters').textContent = (data.totalHomeownerVoters || 0) + (data.totalClubMemberVoters || 0);
+            const updated = data.lastUpdated ? new Date(data.lastUpdated) : new Date();
+            document.getElementById('lastUpdated').innerHTML = 'Last updated<br>' + updated.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+        loadData();
+        setInterval(loadData, 30000);
+    </script>
+</body>
+</html>
