@@ -2,6 +2,8 @@
     "lastUpdated": "2026-04-09T12:20:58.583Z",
     "totalHomeownerVoters": 0,
     "totalClubMemberVoters": 0,
+    "inFavorHomeowner": 0,
+    "inFavorClubMember": 0,
     "candidates": [
         { "name": "Capt. Ted Prosser", "category": "PropertyOwner", "votes": 0 },
         { "name": "Michael Mercurio", "category": "PropertyOwner", "votes": 0 },

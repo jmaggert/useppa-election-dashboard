@@ -38,6 +38,15 @@
         .stat-box .stat-label { font-size: 12px; color: #666; margin-top: 4px; }
         .footer { text-align: center; padding: 20px; font-size: 11px; color: #999; }
         .no-data { text-align: center; padding: 40px; color: #999; font-style: italic; }
+        .formation-card { grid-column: 1 / -1; }
+        .formation-body { display: flex; gap: 24px; padding: 20px 24px; align-items: stretch; }
+        .formation-box { flex: 1; background: #f8fafb; border-radius: 6px; padding: 20px; text-align: center; }
+        .formation-box .vote-value { font-size: 36px; font-weight: 700; color: #063146; }
+        .formation-box .vote-label { font-size: 13px; color: #666; margin-top: 4px; }
+        .formation-box .vote-pct { font-size: 14px; font-weight: 600; color: #bf994d; margin-top: 8px; }
+        .formation-total { text-align: center; padding: 12px 24px; background: #f8fafb; border-top: 1px solid #eef2f5; }
+        .formation-total .total-value { font-size: 28px; font-weight: 700; color: #063146; }
+        .formation-total .total-label { font-size: 13px; color: #666; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -56,6 +65,27 @@
                 <div class="stat-box"><div class="stat-value" id="totalHomeownerVoters">0</div><div class="stat-label">Homeowner Ballots Cast</div></div>
                 <div class="stat-box"><div class="stat-value" id="totalClubMemberVoters">0</div><div class="stat-label">Club Member Ballots Cast</div></div>
                 <div class="stat-box"><div class="stat-value" id="totalVoters">0</div><div class="stat-label">Total Ballots Cast</div></div>
+            </div>
+        </div>
+        <div class="card formation-card">
+            <div class="card-header">Advisory Council Formation Vote
+                <div class="subtitle">Are you in favor of the formation of the UIP Advisory Council?</div>
+            </div>
+            <div class="card-body formation-body">
+                <div class="formation-box">
+                    <div class="vote-value" id="inFavorHomeowner">0</div>
+                    <div class="vote-label">Homeowner Votes In Favor</div>
+                    <div class="vote-pct" id="inFavorHomeownerPct"></div>
+                </div>
+                <div class="formation-box">
+                    <div class="vote-value" id="inFavorClubMember">0</div>
+                    <div class="vote-label">Club Member Votes In Favor</div>
+                    <div class="vote-pct" id="inFavorClubMemberPct"></div>
+                </div>
+            </div>
+            <div class="formation-total">
+                <div class="total-value" id="inFavorTotal">0</div>
+                <div class="total-label">Total Votes In Favor</div>
             </div>
         </div>
         <div class="card">
@@ -115,6 +145,15 @@
             document.getElementById('totalHomeownerVoters').textContent = data.totalHomeownerVoters || 0;
             document.getElementById('totalClubMemberVoters').textContent = data.totalClubMemberVoters || 0;
             document.getElementById('totalVoters').textContent = (data.totalHomeownerVoters || 0) + (data.totalClubMemberVoters || 0);
+            const iho = data.inFavorHomeowner || 0;
+            const icm = data.inFavorClubMember || 0;
+            document.getElementById('inFavorHomeowner').textContent = iho;
+            document.getElementById('inFavorClubMember').textContent = icm;
+            document.getElementById('inFavorTotal').textContent = iho + icm;
+            const hoVoters = data.totalHomeownerVoters || 0;
+            const cmVoters = data.totalClubMemberVoters || 0;
+            document.getElementById('inFavorHomeownerPct').textContent = hoVoters > 0 ? Math.round((iho / hoVoters) * 100) + '% of ballots' : '';
+            document.getElementById('inFavorClubMemberPct').textContent = cmVoters > 0 ? Math.round((icm / cmVoters) * 100) + '% of ballots' : '';
             const updated = data.lastUpdated ? new Date(data.lastUpdated) : new Date();
             document.getElementById('lastUpdated').innerHTML = 'Last updated<br>' + updated.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
         }
